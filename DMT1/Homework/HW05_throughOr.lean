@@ -66,13 +66,16 @@ is to finish a proof of it.
 theorem getSandwich ( H M S : Prop) :
   (H ∧ M) →       -- assume hunger and money
   (H → M → S) →   -- assume if hunger then if money then sandwich
-  S :=            -- togeher they imply sandwich
+  S :=            -- together they imply sandwich
   (
-    -- the first arrown is the main connective
+    -- the first arrow is the main connective
     -- it's an implication, so assume I'm hungry then assume I have money
-    fun (hm : H ∧ M) =>
+    fun hm =>
       -- and in this context construct a proof of S
-      _
+    fun hms =>
+    let h := hm.left
+    let m := hm.right
+    hms h m
   )
 
 
@@ -212,26 +215,54 @@ theorem orComm (P Q : Prop) : (P ∨ Q) ↔ (Q ∨ P) :=
   (
     -- assume P ∨ Q
     fun porq =>
-    (
       -- show Q ∨ P
-      _
-    )
+      match porq with
+      | Or.inl p => Or.inr p
+      | Or.inr q => Or.inl q
+
   )
   -- backward proof: show (Q ∨ P) → (P ∨ Q)
-  (
-    -- you do the rest
-    _
+  (fun qorp =>
+      match qorp with
+      | Or.inl q => Or.inr q
+      | Or.inr p => Or.inl p
+    )
   )
-)
+
 
 /- @@@
-Exercise #2: State and prove the theorem that Or is associative.
+Exercise #2: State and prove the theorem that Or is associative. -/
 
-Exercise #3: Is Or transitive? If we know P ∨ Q and we know Q ∨ R
+theorem orAssoc (P Q R : Prop) : (P ∨ (Q ∨ R)) ↔ ((P ∨ Q) ∨ R) :=
+(
+  Iff.intro
+    (fun h =>
+      match h with
+      | Or.inl p => Or.inl (Or.inl p)
+      | Or.inr qr =>
+        match qr with
+        | Or.inl q => Or.inl (Or.inr q)
+        | Or.inr r => Or.inr r
+    )
+    (fun h =>
+      match h with
+      | Or.inl pq =>
+        match pq with
+        | Or.inl p => Or.inl p
+        | Or.inr q => Or.inr (Or.inl q)
+      | Or.inr r => Or.inr (Or.inr r)
+    )
+)
+
+
+/-Exercise #3: Is Or transitive? If we know P ∨ Q and we know Q ∨ R
 then do we know P ∨ R for sure? If so prove it, if not in English
 just give a counterexample: What's a situation where the premises
 of this implication are true but the conclusion is false. You can
 just argue here in terms of truth values.
+
+No, Or is not transitive. For example, if P is false, Q is true, and R is false.
+In this case P ∨ Q = true, Q ∨ R = true, but P ∨ R = false. Premises true, concluions false!
 
 Exercise #4: Formally state and prove the following conjecture:
 ∧ distributes over ∨. This is like saying * distributes over +
@@ -240,3 +271,18 @@ This what we mean by *multiplication distributes over addition.*
 In logic we mean A ∧ (B ∨ C) ↔ (A ∧ B) ∨ (A ∧ C). Formally state
 and prove this equivalence.
 @@@ -/
+
+theorem andDisOverOr ( A B C : Prop) :  A ∧ (B ∨ C) ↔ (A ∧ B) ∨ (A ∧ C) :=
+(
+  Iff.intro
+  (fun h =>
+    match h.right with
+    | Or.inl b => Or.inl ⟨ h.left, b⟩
+    | Or.inr c => Or.inr ⟨ h.left, c⟩
+  )
+  (fun h =>
+  match h with
+  | Or.inl ab => ⟨ ab.left, Or.inl ab.right⟩
+  | Or.inr ac => ⟨ ac.left, Or.inr ac.right⟩
+  )
+)
